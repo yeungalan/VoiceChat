@@ -7,7 +7,7 @@
 <body>
     <audio id="audio-player"></audio>
     <script>
-        var socket = new WebSocket('ws://172.28.1.142:8000/ws/channel-1');
+        var socket = new WebSocket(getWebSocketEndpoint() + '/ws/channel-1');
 
 
 
@@ -23,6 +23,24 @@
 			const audioElement = new Audio(audioUrl);
 			audioElement.play();
         });
+
+		function getWebSocketEndpoint(){
+        let protocol = "wss://";
+        if (location.protocol !== 'https:') {
+            protocol = "ws://";
+        }
+        let port = window.location.port;
+        if (window.location.port == ""){
+            if (location.protocol !== 'https:') {
+                port = "80";
+            }else{
+                port = "443";
+            }
+            
+        }
+        let wsept = (protocol + window.location.hostname + ":" + port);
+        return wsept;
+    }
     </script>
 </body>
 </html>

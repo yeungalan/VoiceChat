@@ -111,5 +111,6 @@ func main() {
 	})
 
 	log.Println("OK!")
-	http.ListenAndServe(":8000", nil)
+	go http.ListenAndServe(":8000", nil)
+	http.ListenAndServeTLS(":8443", "localhost.crt", "localhost.key", nil)
 }

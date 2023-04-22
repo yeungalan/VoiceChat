@@ -19,7 +19,7 @@
 
                 mediaRecorder = new MediaRecorder(mediaStream, options);
 
-                var socket = new WebSocket('ws://172.28.1.142:8000/ws/channel-1');
+                var socket = new WebSocket(getWebSocketEndpoint() + '/ws/channel-1');
 
                 document.getElementById('record-button').addEventListener('click', function() {
 				
