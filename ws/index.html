@@ -31,7 +31,7 @@
                 .then(function(stream) {
                     mediaStream = stream;
                     var mediaRecorder;
-                    var options = { mimeType: 'audio/webm' };
+                    var options = { mimeType: 'audio/webm'};
                     mediaRecorder = new MediaRecorder(mediaStream, options);
 
                     mediaRecorder.addEventListener('dataavailable', function(event) {
@@ -46,7 +46,7 @@
                     });
 
                     mediaRecorder.start();
-                    setTimeout(function(){mediaRecorder.stop();startStream(); }, 1000);
+                    setTimeout(function(){mediaRecorder.stop();startStream(); }, 500);
                     console.log("OK");
             });
         }
