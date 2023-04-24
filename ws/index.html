@@ -11,6 +11,10 @@
     <div class="container">
         <h1>Hello, world!</h1>
         <p id="count">#</p>
+        <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">@</span>
+            <input type="text" class="form-control" id="username" placeholder="Username" aria-label="Username" aria-describedby="basic-addon1">
+          </div>
         <button type="button" id="record" class="btn btn-primary">Connect to Channel - 1</button>
         <audio id="audio-player"></audio>
     </div>
@@ -20,6 +24,7 @@
         var socket = new WebSocket(getWebSocketEndpoint() + '/ws/channel-1');
         var mediaStream;
         //var started = false;
+        const audioContext = new AudioContext();
 
         function startStream() {
             navigator.mediaDevices.getUserMedia({ audio: true })
@@ -34,40 +39,52 @@
                             const reader = new FileReader();
                             reader.onload = function() {
                                 const base64Data = reader.result.split(',')[1];
-                                socket.send(base64Data);
+                                socket.send($("#username").val() + ">" + base64Data);
                             };
                             reader.readAsDataURL(event.data);
                         }
                     });
 
                     mediaRecorder.start();
-                    setTimeout(function(){mediaRecorder.stop();startStream(); }, 500);
+                    setTimeout(function(){mediaRecorder.stop();startStream(); }, 1000);
                     console.log("OK");
             });
         }
 
         document.getElementById('record').addEventListener('click', function() {
             startStream();
+            startSound();
         });
 
+        function startSound() {
+            var length = 0;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = 0.7;
 
-        
-        socket.addEventListener('message', function(event) {
-            count++;
-            $("#count").text(count);
-			const base64Data = event.data;
-			const binaryData = atob(base64Data);
-			const audioData = new Uint8Array(binaryData.length);
-			for (let i = 0; i < binaryData.length; i++) {
-				audioData[i] = binaryData.charCodeAt(i);
-			}
-			const audioBlob = new Blob([audioData.buffer], { type: 'audio/webm' });
-
-            
-			const audioUrl = URL.createObjectURL(audioBlob);
-			const audioElement = new Audio(audioUrl);
-			audioElement.play();
-        });
+            socket.addEventListener('message', function(event) {
+                count++;
+                $("#count").text(count);
+                var base64Data = event.data.split(">");
+                username = base64Data[0];
+                base64Data = base64Data[1];
+                if(username != $("#username").val()) {
+                    audioContext.decodeAudioData(_base64ToArrayBuffer(base64Data)).then((audioBuffer) => {
+                        console.log(audioBuffer);
+                        var audioSourceNode1 = audioContext.createBufferSource();
+                        audioSourceNode1.buffer = audioBuffer;
+                        gainNode.connect(audioContext.destination);
+                        audioSourceNode1.connect(gainNode);
+                        audioSourceNode1.start(length);
+                        length += audioBuffer.duration;
+                        console.log(length);
+                    });
+                }
+                /*
+                console.log(audioBuffer);
+                
+                */
+            });
+        }
         
         // from arozos, collabed project
         function getWebSocketEndpoint(){
@@ -87,6 +104,16 @@
             let wsept = (protocol + window.location.hostname + ":" + port);
             return wsept;
         }
+
+        function _base64ToArrayBuffer(base64) {
+    var binary_string = window.atob(base64);
+    var len = binary_string.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
     </script>
   </body>
 </html>
