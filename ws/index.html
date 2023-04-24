@@ -62,6 +62,8 @@
 				audioData[i] = binaryData.charCodeAt(i);
 			}
 			const audioBlob = new Blob([audioData.buffer], { type: 'audio/webm' });
+
+            
 			const audioUrl = URL.createObjectURL(audioBlob);
 			const audioElement = new Audio(audioUrl);
 			audioElement.play();
