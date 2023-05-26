@@ -9,13 +9,25 @@
   </head>
   <body>
     <div class="container">
-        <h1>Hello, world!</h1>
+        <h1>Mobile Systems & Networking Capstone - UW 2023 Spring</h1>
         <p id="count">#</p>
         <div class="input-group mb-3">
             <span class="input-group-text" id="basic-addon1">@</span>
             <input type="text" class="form-control" id="username" placeholder="Username" aria-label="Username" aria-describedby="basic-addon1">
           </div>
         <button type="button" id="record" class="btn btn-primary">Connect to Channel - 1</button>
+        <!--<button type="button" id="stop" class="btn btn-primary" onclick="stop()">Stop</button>-->
+        <form>
+            <div class="form-group">
+              <label for="transcriptTxt">Transcript</label>
+              <input type="text" class="form-control" id="transcriptTxt">
+            </div>
+            <div class="form-group">
+                <label for="incoming">incoming</label>
+                <textarea class="form-control" id="incoming" rows="3"></textarea>
+              </div>
+        </form>
+        <button type="button" id="transcript" class="btn btn-primary">Send emulated transcript</button>
         <audio id="audio-player"></audio>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
@@ -23,14 +35,18 @@
         var count = 0;
         var socket = new WebSocket(getWebSocketEndpoint() + '/ws/channel-1');
         var mediaStream;
+        var mediaRecorder;
         //var started = false;
         const audioContext = new AudioContext();
+
+        function stop() {
+            mediaRecorder.stop();
+        }
 
         function startStream() {
             navigator.mediaDevices.getUserMedia({ audio: true })
                 .then(function(stream) {
                     mediaStream = stream;
-                    var mediaRecorder;
                     var options = { mimeType: 'audio/webm'};
                     mediaRecorder = new MediaRecorder(mediaStream, options);
 
@@ -39,21 +55,30 @@
                             const reader = new FileReader();
                             reader.onload = function() {
                                 const base64Data = reader.result.split(',')[1];
-                                socket.send($("#username").val() + ">" + base64Data);
+                                socket.send($("#username").val() + ">" + Date.now() + ">A>" + base64Data);
                             };
                             reader.readAsDataURL(event.data);
                         }
                     });
 
                     mediaRecorder.start();
-                    setTimeout(function(){mediaRecorder.stop();startStream(); }, 500);
+                    //setTimeout(function(){mediaRecorder.stop();startStream(); }, 500);
+                    setTimeout(function(){mediaRecorder.stop();startStream(); }, 1000);
                     console.log("OK");
             });
+        }
+
+        function sendTranscript() {
+            socket.send($("#username").val() + ">" + Date.now() + ">T>" + $("#transcriptTxt").val());
         }
 
         document.getElementById('record').addEventListener('click', function() {
             startStream();
             startSound();
+        });
+
+        document.getElementById('transcript').addEventListener('click', function() {
+            sendTranscript();
         });
 
         function startSound() {
@@ -66,8 +91,10 @@
                 $("#count").text(count);
                 var base64Data = event.data.split(">");
                 username = base64Data[0];
-                base64Data = base64Data[1];
-                if(username != $("#username").val()) {
+                ping = base64Data[1];
+                type = base64Data[2];
+                base64Data = base64Data[3];
+                if(username != $("#username").val() && type == "A") {
                     audioContext.decodeAudioData(_base64ToArrayBuffer(base64Data)).then((audioBuffer) => {
                         console.log(audioBuffer);
                         var audioSourceNode1 = audioContext.createBufferSource();
@@ -78,6 +105,8 @@
                         length += audioBuffer.duration;
                         console.log(length);
                     });
+                }else if (username != $("#username").val() && type == "T") {
+                    $("#incoming").append(base64Data);
                 }
                 /*
                 console.log(audioBuffer);
